@@ -19,8 +19,8 @@
         "symfony/framework-bundle": ">=2.1,<2.2-dev"
     },
     "autoload": {
-        "psr-0": { "RC\\RCOpenSSLCryptoBundle": "" }
+        "psr-0": { "RC\\OpenSSLCryptoBundle": "" }
     },
     "minimum-stability": "dev",
-    "target-dir": "RC/RCOpenSSLCryptoBundle"
+    "target-dir": "RC/OpenSSLCryptoBundle"
 }
