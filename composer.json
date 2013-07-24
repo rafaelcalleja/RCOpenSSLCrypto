@@ -13,7 +13,7 @@
     ],
     "require": {
         "php": ">=5.3.2",
-	"openssl": ">=1.0"
+	"ext-openssl": "*"
     },
     "require-dev": {
         "symfony/framework-bundle": ">=2.1,<2.2-dev"
