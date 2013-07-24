@@ -1,0 +1,26 @@
+{
+    "name": "rc/openssl-crypto-bundle",
+    "type": "symfony-bundle",
+    "description": "Encrypt / Decrypt using Open SSL",
+    "keywords": ["ssl", "decrypt", "encrypt", "openssl", "bundle"],
+    "homepage": "https://github.com/rafaelcalleja/RCOpenSSLCrypto.git", 
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Rafael Calleja",
+            "email": "rafa.calleja@d-noise.net"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2",
+	"libssl-dev": ">=1.0"
+    },
+    "require-dev": {
+        "symfony/framework-bundle": ">=2.1,<2.2-dev"
+    },
+    "autoload": {
+        "psr-0": { "RC\\PHPCRReorderNodesBundle": "" }
+    },
+    "minimum-stability": "dev",
+    "target-dir": "RC/PHPCRReorderNodesBundle"
+}
