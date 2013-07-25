@@ -4,17 +4,58 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
-    <!--
+
     <parameters>
-        <parameter key="rc_open_ssl_crypto.example.class">RC\OpenSSLCryptoBundle\Example</parameter>
+        <parameter key="rc.crypter.class">RC\OpenSSLCryptoBundle\Services\Crypter</parameter>
+        <parameter key="rc.keygenerator.class">RC\OpenSSLCryptoBundle\Services\KeyGenerator</parameter>
+        <parameter key="rc.csr.class">RC\OpenSSLCryptoBundle\Entity\CSR</parameter>
     </parameters>
 
     <services>
-        <service id="rc_open_ssl_crypto.example" class="%rc_open_ssl_crypto.example.class%">
-            <argument type="service" id="service_id" />
-            <argument>plain_value</argument>
-            <argument>%parameter_name%</argument>
+
+        <service id="rc.crypter" class="%rc.crypter.class%">
+            <argument>%rc_open_ssl_crypto.privkey_path%</argument>
+            <argument>%rc_open_ssl_crypto.passphrase%</argument>
         </service>
+
+        <service id="rc.keygenerator" class="%rc.keygenerator.class%">
+            <argument id="rc.csr" type="service" />
+            <argument>%rc_open_ssl_crypto.conf_path%</argument>
+            <argument>%rc_open_ssl_crypto.cert_days_valid%</argument>
+            <argument>%rc_open_ssl_crypto.passphrase%</argument>
+            <argument>%rc_open_ssl_crypto.pubkey_path%</argument>
+        </service>
+
+        <service id="rc.csr" class="%rc.csr.class%">
+            <call method="setCommonName">
+                <argument>%rc_open_ssl_crypto.common_name%</argument>
+            </call>
+
+            <call method="setCountryName">
+                <argument>%rc_open_ssl_crypto.country_name%</argument>
+            </call>
+
+            <call method="setEmailAddress">
+                <argument>%rc_open_ssl_crypto.email_address%</argument>
+            </call>
+
+            <call method="setLocalityName">
+                <argument>%rc_open_ssl_crypto.locality_name%</argument>
+            </call>
+
+            <call method="setOrganizationName">
+                <argument>%rc_open_ssl_crypto.organization_name%</argument>
+            </call>
+
+            <call method="setOrganizationalUnitName">
+                <argument>%rc_open_ssl_crypto.organizational_unit_name%</argument>
+            </call>
+
+            <call method="setStateOrProvinceName">
+                <argument>%rc_open_ssl_crypto.state_or_province%</argument>
+            </call>
+        </service>
+
     </services>
-    -->
+
 </container>
