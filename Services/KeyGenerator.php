@@ -54,15 +54,19 @@ class KeyGenerator {
 
     }
 
-    public function getClientCertificate(){
+    public function getClientCertificate($passphrase){
+
         $key = openssl_pkey_get_private($this->privatekey, $this->passphrase);
 
-        openssl_pkcs12_export($this->sscert, $iis, $key, $this->passphrase);
+        openssl_pkcs12_export($this->sscert, $iis, $key,  $passphrase);
 
         return $iis;
     }
 
 
+    public function getCert(){
+        return $this->sscert;
+    }
 
     /**
      * @return mixed

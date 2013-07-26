@@ -9,6 +9,13 @@
         <parameter key="rc.crypter.class">RC\OpenSSLCryptoBundle\Services\Crypter</parameter>
         <parameter key="rc.keygenerator.class">RC\OpenSSLCryptoBundle\Services\KeyGenerator</parameter>
         <parameter key="rc.csr.class">RC\OpenSSLCryptoBundle\Entity\CSR</parameter>
+
+        <parameter key="rc.ssl.metadata_factory.class">Metadata\MetadataFactory</parameter>
+        <parameter key="rc.ssl.metadata.annotation_driver.class">RC\OpenSSLCryptoBundle\Metadata\Driver\AnnotationDriver</parameter>
+        <parameter key="rc.ssl.encrypt_processor.class">RC\OpenSSLCryptoBundle\Processor\EncryptProcessor</parameter>
+        <parameter key="rc.ssl.subscriber.encrypt.class">RC\OpenSSLCryptoBundle\EventListener\EncryptSubscriber</parameter>
+
+
     </parameters>
 
     <services>
@@ -54,6 +61,20 @@
             <call method="setStateOrProvinceName">
                 <argument>%rc_open_ssl_crypto.state_or_province%</argument>
             </call>
+        </service>
+
+        <service id="rc.ssl.metadata.annotation_driver" class="%rc.ssl.metadata.annotation_driver.class%" public="false">
+            <argument type="service" id="annotation_reader" />
+            <argument type="service" id="rc.crypter" />
+            <tag name="doctrine.event_subscriber"></tag>
+        </service>
+
+        <service id="rc.ssl.metadata_factory" class="%rc.ssl.metadata_factory.class%" public="false">
+            <argument type="service" id="rc.ssl.metadata.annotation_driver" />
+        </service>
+
+        <service id="rc.ssl.encrypt_processor" class="%rc.ssl.encrypt_processor.class%">
+            <argument type="service" id="rc.ssl.metadata_factory" />
         </service>
 
     </services>

@@ -15,12 +15,12 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Yaml\Parser;
-
+use RC\OpenSSLCryptoBundle\Services\BrowserKeyGenerator;
 
 /**
  * @author Rafael Calleja <rafa.calleja@d-noise.net>
  */
-class GenerateCertificatedCommand extends ContainerAwareCommand
+class BrowserCertificatedCommand extends ContainerAwareCommand
 {
 	/**
 	 * @see Command
@@ -28,11 +28,12 @@ class GenerateCertificatedCommand extends ContainerAwareCommand
 	protected function configure()
 	{
 		$this
-		->setName('rc:openssl:server')
-		->setDescription('Crea un certificado autofirmado para apache')
+		->setName('rc:openssl:browser')
+		->setDescription('Crea un certificado autofirmado para el navegador')
 		->setDefinition(array(
-				new InputArgument('pkcs-passphrase', InputArgument::REQUIRED, 'The CLIENT PKCS passphrase'),
-                new InputArgument('pkcs-passphrase2', InputArgument::REQUIRED, 'The CLIENT PKCS passphrase confirmation'),
+				new InputArgument('pkcs-passphrase', InputArgument::REQUIRED, 'The PKCS passphrase'),
+                new InputArgument('pkcs-passphrase2', InputArgument::REQUIRED, 'The PKCS passphrase confirmation'),
+                new InputArgument('output', InputArgument::REQUIRED, 'Destination file'),
 		))
 		->setHelp(<<<EOT
             	<info>
@@ -64,57 +65,39 @@ EOT
 	 */
 	protected function execute(InputInterface $input, OutputInterface $output)
 	{
-        $pass = $file = $input->getArgument('pkcs-passphrase');;
+        $clientpass = $file = $input->getArgument('pkcs-passphrase');;
         $private = $this->getContainer()->getParameter('rc_open_ssl_crypto.privkey_path');
-        $public = $this->getContainer()->getParameter('rc_open_ssl_crypto.pubkey_path');
-        $csr = $this->getContainer()->getParameter('rc_open_ssl_crypto.csr_path');
         $cert = $this->getContainer()->getParameter('rc_open_ssl_crypto.cert_path');
-        $pkcs = $this->getContainer()->getParameter('rc_open_ssl_crypto.client_path');
+        $config = $this->getContainer()->getParameter('rc_open_ssl_crypto.conf_path');
+        $pass = $this->getContainer()->getParameter('rc_open_ssl_crypto.passphrase');
+        $pkcs = $input->getArgument('output');;
 
-		if(file_exists($private)){
-			$output->writeln(sprintf('<error>File Exists, delete it by hand: </error> <comment>%s</comment>', $private));
+		if(!file_exists($private)){
+			$output->writeln(sprintf('<error>Unknonw File: </error> <comment>%s</comment>', $private));
 			return false;
 		}
 
-        if(file_exists($public)){
-            $output->writeln(sprintf('<error>File Exists, delete it by hand: </error> <comment>%s</comment>', $public));
+        if(!file_exists($cert)){
+            $output->writeln(sprintf('<error>Unknonw File:</error> <comment>%s</comment>', $cert));
             return false;
         }
 
-        if(file_exists($csr)){
-            $output->writeln(sprintf('<error>File Exists, delete it by hand: </error> <comment>%s</comment>', $csr));
+        if(!file_exists($private)){
+            $output->writeln(sprintf('<error>Unknonw File:</error> <comment>%s</comment>', $private));
             return false;
         }
 
-        if(file_exists($pkcs)){
-            $output->writeln(sprintf('<error>File Exists, delete it by hand: </error> <comment>%s</comment>', $pkcs));
-            return false;
-        }
-
-        if(file_exists($cert)){
-            $output->writeln(sprintf('<error>File Exists, delete it by hand: </error> <comment>%s</comment>', $cert));
-            return false;
-        }
-
-        $gen = $this->getContainer()->get('rc.keygenerator');
+        $gen = new BrowserKeyGenerator($pass, $cert, $private, $config);
 
         if( $error = $gen->generate() !== true ){
             $output->writeln(sprintf('<error>No se ha podido generar el certificado: </error> <comment>%s</comment>', $error));
             return false;
         }
 
-        openssl_x509_export($gen->getCert(), $cert_txt);
-        file_put_contents($private, $gen->getPrivatekey() );
-        file_put_contents($public, $gen->getPublickey() );
-        file_put_contents($csr, $gen->getCsr() );
-        file_put_contents($cert, $cert_txt );
-        file_put_contents($pkcs, $gen->getClientCertificate($pass) );
+
+        file_put_contents($pkcs, $gen->getClientCertificate($clientpass) );
 
 		$output->writeln(sprintf('Se ha generado correctamente el certificado'));
-        $output->writeln(sprintf('Private: <comment>%s</comment>', $private));
-        $output->writeln(sprintf('Public: <comment>%s</comment>', $public));
-        $output->writeln(sprintf('CSR: <comment>%s</comment>', $csr));
-        $output->writeln(sprintf('Cert: <comment>%s</comment>', $cert));
         $output->writeln(sprintf('PKCS: <comment>%s</comment>', $pkcs));
 	}
 
@@ -153,43 +136,28 @@ EOT
             $input->setArgument('pkcs-passphrase2', $pass2);
         }
 
-        if ($pass != $pass2) {
-            throw new \Exception('las claves no coinciden');
-        }
-
-
-        if (!$input->getArgument('pkcs-passphrase')) {
-            $pass = $this->getHelper('dialog')->askAndValidate(
-                $output,
-                '<question>Por favor introduzca un clave de exportación:</question>',
-                function($pass) {
-                    if (empty($pass)) {
-                        throw new \Exception('pkcs-passphrase can not be empty');
-                    }
-
-                    return $pass;
-                }
-            );
-            $input->setArgument('pkcs-passphrase', $pass);
-        }
-
-        if (!$input->getArgument('pkcs-passphrase2')) {
-            $pass2 = $this->getHelper('dialog')->askAndValidate(
-                $output,
-                '<question>Por favor introduzca la misma clave de exportación :</question>',
-                function($pass2) {
-                    if (empty($pass2)) {
-                        throw new \Exception('pkcs-passphrase2 can not be empty');
-                    }
-
-                    return $pass2;
-                }
-            );
-            $input->setArgument('pkcs-passphrase2', $pass2);
-        }
 
         if ($pass != $pass2) {
             throw new \Exception('las claves no coinciden');
+        }
+
+        if (!$input->getArgument('output')) {
+            $ot = $this->getHelper('dialog')->askAndValidate(
+                $output,
+                '<question>Por favor introduzca un archivo de destino:</question>',
+                function($ot) {
+                    if (empty($ot)) {
+                        throw new \Exception('output: can not be empty');
+                    }
+
+                    return $ot;
+                }
+            );
+            $input->setArgument('output', $ot);
+        }
+
+        if(file_exists($ot)){
+            throw new \Exception('El archivo ya existe');
         }
 
 	}
